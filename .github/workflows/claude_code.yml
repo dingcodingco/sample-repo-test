@@ -15,11 +15,8 @@ on:
 
 jobs:
   claude:
-    # Only run if:
-    # - @claude is mentioned in comments/reviews OR
-    # - It's a new/updated PR (for auto-review) OR
-    # - Issue is opened/assigned with @claude mention
-if: |
+    # Only run if @claude is mentioned in comments/reviews or issues
+    if: |
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
