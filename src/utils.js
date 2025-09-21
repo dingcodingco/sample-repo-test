@@ -6,19 +6,31 @@
 // String utilities
 const capitalize = (str) => {
   if (!str) return '';
+  if (typeof str !== 'string') {
+    throw new TypeError('Input must be a string');
+  }
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 };
 
 const reverseString = (str) => {
+  if (typeof str !== 'string') {
+    throw new TypeError('Input must be a string');
+  }
   return str.split('').reverse().join('');
 };
 
 // Array utilities
 const removeDuplicates = (arr) => {
+  if (!Array.isArray(arr)) {
+    throw new TypeError('Input must be an array');
+  }
   return [...new Set(arr)];
 };
 
 const shuffle = (arr) => {
+  if (!Array.isArray(arr)) {
+    throw new TypeError('Input must be an array');
+  }
   const newArr = [...arr];
   for (let i = newArr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -29,6 +41,9 @@ const shuffle = (arr) => {
 
 // Math utilities
 const isPrime = (num) => {
+  if (typeof num !== 'number' || !Number.isInteger(num)) {
+    throw new TypeError('Input must be an integer');
+  }
   if (num <= 1) return false;
   if (num <= 3) return true;
   if (num % 2 === 0 || num % 3 === 0) return false;
@@ -40,13 +55,24 @@ const isPrime = (num) => {
 };
 
 const factorial = (n) => {
-  if (n < 0) return null;
+  if (typeof n !== 'number' || !Number.isInteger(n)) {
+    throw new TypeError('Input must be an integer');
+  }
+  if (n < 0) {
+    throw new RangeError('Input must be non-negative');
+  }
+  if (n > 170) {
+    throw new RangeError('Input too large - will cause overflow');
+  }
   if (n === 0 || n === 1) return 1;
   return n * factorial(n - 1);
 };
 
 // Date utilities
 const formatDate = (date = new Date()) => {
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
+    throw new TypeError('Input must be a valid Date object');
+  }
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');

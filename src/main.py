@@ -8,13 +8,46 @@ import datetime
 
 
 def greet(name="World"):
-    """Generate a greeting message with timestamp."""
+    """Generate a greeting message with timestamp.
+
+    Args:
+        name (str): Name to greet
+
+    Returns:
+        str: Greeting message with current timestamp
+
+    Raises:
+        TypeError: If name is not a string
+    """
+    if not isinstance(name, str):
+        raise TypeError(f"Name must be a string, got {type(name).__name__}")
+
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     return f"Hello, {name}! Current time: {current_time}"
 
 
 def calculate_fibonacci(n):
-    """Calculate Fibonacci sequence up to n terms."""
+    """Calculate Fibonacci sequence up to n terms.
+
+    Args:
+        n (int): Number of terms to calculate
+
+    Returns:
+        list: Fibonacci sequence
+
+    Raises:
+        TypeError: If n is not an integer
+        ValueError: If n is negative or too large
+    """
+    if not isinstance(n, int):
+        raise TypeError(f"n must be an integer, got {type(n).__name__}")
+
+    if n < 0:
+        raise ValueError("Number of terms must be non-negative")
+
+    if n > 10000:
+        raise ValueError("Number of terms too large (max: 10000)")
+
     if n <= 0:
         return []
     elif n == 1:
