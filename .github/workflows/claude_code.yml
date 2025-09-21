@@ -9,10 +9,6 @@ on:
   pull_request_review:
     types: [submitted]
 
-  # Auto-review on PR creation/updates
-  pull_request:
-    types: [opened, synchronize]
-
   # Handle issue assignments
   issues:
     types: [opened, assigned]
@@ -23,8 +19,7 @@ jobs:
     # - @claude is mentioned in comments/reviews OR
     # - It's a new/updated PR (for auto-review) OR
     # - Issue is opened/assigned with @claude mention
-    if: |
-      (github.event_name == 'pull_request') ||
+if: |
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
       (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
@@ -50,18 +45,4 @@ jobs:
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          # For PR auto-review, provide specific prompt
-          prompt: |
-            ${{ github.event_name == 'pull_request' && format('
-            Please review this pull request #{0} in repository {1}.
-
-            Focus on:
-            1. Security vulnerabilities (SQL injection, XSS, API key exposure, etc.)
-            2. Code quality and maintainability
-            3. Potential bugs and edge cases
-            4. Performance concerns
-            5. Best practices and conventions
-
-            Provide your feedback in a clear, constructive manner with specific suggestions for improvement.
-            If everything looks good, just say "LGTM (Looks Good To Me) 👍"
-            ', github.event.pull_request.number, github.repository) || '' }}
+# Claude will respond to the user's request automatically
