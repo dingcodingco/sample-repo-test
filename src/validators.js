@@ -98,7 +98,12 @@ const validatePassword = (password) => {
  * @returns {string} Sanitized input
  */
 const sanitizeInput = (input) => {
+  if (typeof input !== 'string') {
+    throw new TypeError('Input must be a string');
+  }
+
   // Basic HTML escaping - not sufficient for all XSS prevention
+  // TODO: Use a proper library like DOMPurify for production
   return input
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
@@ -107,12 +112,48 @@ const sanitizeInput = (input) => {
     .replace(/\//g, '&#x2F;');
 };
 
+/**
+ * Validate credit card number using Luhn algorithm
+ * @param {string} cardNumber - Credit card number
+ * @returns {boolean} True if valid
+ */
+const isValidCreditCard = (cardNumber) => {
+  // Remove spaces and dashes
+  const cleaned = cardNumber.replace(/[\s-]/g, '');
+
+  // Check if only digits
+  if (!/^\d+$/.test(cleaned)) {
+    return false;
+  }
+
+  // Luhn algorithm
+  let sum = 0;
+  let isEven = false;
+
+  for (let i = cleaned.length - 1; i >= 0; i--) {
+    let digit = parseInt(cleaned[i], 10);
+
+    if (isEven) {
+      digit *= 2;
+      if (digit > 9) {
+        digit -= 9;
+      }
+    }
+
+    sum += digit;
+    isEven = !isEven;
+  }
+
+  return sum % 10 === 0;
+};
+
 module.exports = {
   isValidEmail,
   isValidPhone,
   isValidURL,
   validatePassword,
-  sanitizeInput
+  sanitizeInput,
+  isValidCreditCard
 };
 
 // Example usage

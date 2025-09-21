@@ -30,14 +30,14 @@ sample-repo-test/
 ├── src/
 │   ├── main.py
 │   ├── utils.js
-│   └── validators.js
+│   ├── validators.js
+│   └── example_api.js
 ├── prompts/
 │   └── code_review.txt
 └── .github/
     └── workflows/
-        ├── claude_review.yml
-        ├── claude_review_alternative.yml
-        └── claude_review_simple.yml
+        ├── claude_code.yml
+        └── pr_review.yml
 ```
 
 ## License
