@@ -23,6 +23,7 @@ jobs:
           fetch-depth: 0
 
       - name: Claude Code Review
+        id: claude_review
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -64,3 +65,41 @@ jobs:
             Use markdown formatting for clarity. Be constructive and helpful.
 
             If the code looks good overall, respond with "LGTM 👍" and highlight any particularly good practices you noticed.
+
+      - name: Extract and Post Review Comment
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+
+            // Try to find and read the Claude output file
+            const outputFile = '/home/runner/work/_temp/claude-execution-output.json';
+
+            try {
+              if (fs.existsSync(outputFile)) {
+                const content = fs.readFileSync(outputFile, 'utf8');
+                const data = JSON.parse(content);
+
+                if (data.result) {
+                  // Post the review as a PR comment
+                  const comment = await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: context.issue.number,
+                    body: `## 🤖 AI Code Review by Claude\n\n${data.result}\n\n---\n*This review was generated automatically by Claude AI*`
+                  });
+
+                  console.log('Review comment posted successfully!');
+                  console.log('Comment URL:', comment.data.html_url);
+                } else {
+                  console.log('No review result found in output');
+                }
+              } else {
+                console.log('Claude output file not found');
+              }
+            } catch (error) {
+              console.error('Error posting review:', error);
+            }
