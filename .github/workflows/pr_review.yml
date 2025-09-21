@@ -1,0 +1,65 @@
+name: PR Auto Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review]
+
+jobs:
+  review:
+    # Skip draft PRs
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Claude Code Review
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            You are reviewing PR #${{ github.event.pull_request.number }} in ${{ github.repository }}.
+
+            Please perform a thorough code review focusing on:
+
+            🔒 **Security Issues**:
+            - SQL injection vulnerabilities
+            - XSS vulnerabilities
+            - Exposed API keys or credentials
+            - Insecure data handling
+            - CORS and authentication issues
+
+            🐛 **Potential Bugs**:
+            - Null/undefined handling
+            - Type mismatches
+            - Logic errors
+            - Edge cases
+
+            📊 **Code Quality**:
+            - Code clarity and readability
+            - Maintainability
+            - DRY principle violations
+            - Proper error handling
+
+            ⚡ **Performance**:
+            - Inefficient algorithms
+            - Memory leaks
+            - Unnecessary operations
+
+            📝 **Best Practices**:
+            - Adherence to language conventions
+            - Proper documentation
+            - Test coverage
+
+            Please provide specific, actionable feedback. Point out the exact lines with issues.
+            Use markdown formatting for clarity. Be constructive and helpful.
+
+            If the code looks good overall, respond with "LGTM 👍" and highlight any particularly good practices you noticed.
