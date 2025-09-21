@@ -14,7 +14,7 @@ on:
     types: [opened, assigned]
 
 jobs:
-  claude:
+claude:
     # Only run if @claude is mentioned in comments/reviews or issues
     if: |
       (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
