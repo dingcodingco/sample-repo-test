@@ -1,0 +1,76 @@
+name: Claude Code Review (Alternative)
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get PR diff and prepare review
+        id: prepare_review
+        run: |
+          # main 브랜치와 비교하여 변경된 내용 추출
+          git fetch origin main:main
+          DIFF_CONTENT=$(git diff main...HEAD | head -c 10000) # 10KB로 제한
+
+          # 프롬프트 읽기
+          if [ -f "prompts/code_review.txt" ]; then
+            PROMPT=$(cat prompts/code_review.txt)
+          else
+            PROMPT="Please review this code change for best practices and potential issues."
+          fi
+
+          # Claude API 요청 본문 생성
+          REQUEST_BODY=$(jq -n \
+            --arg prompt "$PROMPT" \
+            --arg diff "$DIFF_CONTENT" \
+            '{
+              model: "claude-3-5-sonnet-20241022",
+              max_tokens: 2000,
+              messages: [
+                {
+                  role: "user",
+                  content: ($prompt + "\n\nCode changes:\n```diff\n" + $diff + "\n```")
+                }
+              ]
+            }')
+
+          echo "$REQUEST_BODY" > request.json
+
+      - name: Call Claude API
+        id: claude_api
+        run: |
+          RESPONSE=$(curl -X POST https://api.anthropic.com/v1/messages \
+            -H "x-api-key: ${{ secrets.ANTHROPIC_API_KEY }}" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "content-type: application/json" \
+            -d @request.json)
+
+          # 응답에서 content 추출
+          REVIEW_CONTENT=$(echo "$RESPONSE" | jq -r '.content[0].text // "Error: Could not get review content"')
+
+          # GitHub Output으로 저장
+          echo "review<<EOF" >> $GITHUB_OUTPUT
+          echo "$REVIEW_CONTENT" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Comment on PR
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const review = `${{ steps.claude_api.outputs.review }}`;
+
+            // PR에 코멘트 작성
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `## 🤖 Claude AI Code Review\n\n${review}\n\n---\n*Reviewed by Claude 3.5 Sonnet*`
+            });
