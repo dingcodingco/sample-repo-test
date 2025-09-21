@@ -16,6 +16,9 @@ git clone https://github.com/dingcodingco/sample-repo-test.git
 
 # Navigate to the directory
 cd sample-repo-test
+
+# Run tests
+node test.js
 ```
 
 ## Project Structure
@@ -23,10 +26,18 @@ cd sample-repo-test
 ```
 sample-repo-test/
 ├── README.md
+├── test.js
 ├── src/
 │   ├── main.py
-│   └── utils.js
-└── .gitignore
+│   ├── utils.js
+│   └── validators.js
+├── prompts/
+│   └── code_review.txt
+└── .github/
+    └── workflows/
+        ├── claude_review.yml
+        ├── claude_review_alternative.yml
+        └── claude_review_simple.yml
 ```
 
 ## License
