@@ -1,0 +1,88 @@
+name: Claude AI Review (Simple)
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup and Review
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+        run: |
+          # Check if API key exists
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "❌ Error: ANTHROPIC_API_KEY is not set in repository secrets"
+            echo "Please add your Anthropic API key to repository secrets"
+            exit 0  # Don't fail the workflow, just skip
+          fi
+
+          # Get the diff
+          git fetch origin main:main
+          DIFF=$(git diff main...HEAD)
+
+          # Limit diff size to prevent issues
+          if [ ${#DIFF} -gt 20000 ]; then
+            DIFF="${DIFF:0:20000}... (truncated)"
+          fi
+
+          # Create the prompt
+          PROMPT="You are a senior code reviewer. Please review the following code changes and provide feedback on:
+          1. Security issues (API keys, SQL injection, XSS, etc.)
+          2. Code quality and maintainability
+          3. Potential bugs and edge cases
+          4. Performance concerns
+
+          Format your response in markdown.
+
+          Code changes:
+          \`\`\`diff
+          $DIFF
+          \`\`\`"
+
+          # Prepare JSON payload
+          JSON_PAYLOAD=$(jq -n \
+            --arg model "claude-3-5-sonnet-20241022" \
+            --arg prompt "$PROMPT" \
+            '{
+              model: $model,
+              max_tokens: 2000,
+              messages: [
+                {
+                  role: "user",
+                  content: $prompt
+                }
+              ]
+            }')
+
+          # Call Claude API
+          RESPONSE=$(curl -s -X POST https://api.anthropic.com/v1/messages \
+            -H "x-api-key: $ANTHROPIC_API_KEY" \
+            -H "anthropic-version: 2023-06-01" \
+            -H "content-type: application/json" \
+            -d "$JSON_PAYLOAD")
+
+          # Extract the review content
+          REVIEW=$(echo "$RESPONSE" | jq -r '.content[0].text // "Error retrieving review"')
+
+          # Post comment to PR using GitHub API
+          COMMENT_BODY=$(jq -n --arg review "$REVIEW" '{
+            body: ("## 🤖 Claude AI Code Review\n\n" + $review + "\n\n---\n*Powered by Claude 3.5 Sonnet*")
+          }')
+
+          curl -s -X POST \
+            -H "Authorization: token $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github.v3+json" \
+            "https://api.github.com/repos/${{ github.repository }}/issues/$PR_NUMBER/comments" \
+            -d "$COMMENT_BODY"
+
+          echo "✅ Review posted to PR #$PR_NUMBER"
